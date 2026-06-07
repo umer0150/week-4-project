@@ -349,7 +349,7 @@ io.on("connection", (socket) => {
 
 // ─── Serve React in Production ────────────────────────────
 if (process.env.NODE_ENV === "production") {
-  const clientDist = path.join(__dirname, "../../../client/dist");
+  const clientDist = path.join(__dirname, "../client/dist");
 
   console.log("Serving static files from:", clientDist);
 
