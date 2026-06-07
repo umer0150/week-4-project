@@ -1,0 +1,13 @@
+{
+  "name": "collabcanvas",
+  "version": "1.0.0",
+  "scripts": {
+    "build":          "npm run build:client && npm run build:server",
+    "build:client":   "cd client && npm install && npm run build",
+    "build:server":   "cd server && npm install",
+    "start":          "cd server && npm run start",
+    "db:migrate":     "cd server && npm run db:migrate",
+    "dev:client":     "cd client && npm run dev",
+    "dev:server":     "cd server && npm run dev"
+  }
+}

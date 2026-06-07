@@ -1,0 +1,31 @@
+{
+  "name": "tldraw-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev":          "tsx watch src/server.ts",
+    "start":       "npx tsx src/server.ts",
+    "db:generate":  "drizzle-kit generate",
+    "db:migrate":   "tsx src/db/migrate.ts",
+    "db:studio":    "drizzle-kit studio"
+  },
+  "dependencies": {
+    "bcryptjs":    "^2.4.3",
+    "cors":        "^2.8.6",
+    "dotenv":      "^17.4.2",
+    "drizzle-orm": "^0.36.0",
+    "express":     "^5.2.1",
+    "pg":          "^8.11.3",
+    "socket.io":   "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors":     "^2.8.17",
+    "@types/express":  "^5.0.6",
+    "@types/node":     "^20.11.5",
+    "@types/pg":       "^8.11.0",
+    "drizzle-kit":     "^0.28.0",
+    "tsx":             "^4.22.4",
+    "typescript":      "^5.3.3"
+  }
+}
