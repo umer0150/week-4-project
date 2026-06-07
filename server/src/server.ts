@@ -1,172 +1,119 @@
-import express from "express";
-import { createServer } from "http";
-import { Server } from "socket.io";
-import cors from "cors";
-import dotenv from "dotenv";
-import bcrypt from "bcryptjs";
-import { eq, count, ilike } from "drizzle-orm";
-import db from "./db/index";
-import path from "path";
-import { fileURLToPath } from "url";
+import express                                        from "express";
+import { createServer }                               from "http";
+import { Server }                                     from "socket.io";
+import cors                                           from "cors";
+import dotenv                                         from "dotenv";
+import bcrypt                                         from "bcryptjs";
+import path                                           from "path";
+import { fileURLToPath }                              from "url";
+import { eq, count, ilike }                           from "drizzle-orm";
+import db                                             from "./db/index";
 import { accounts, users, messages, canvasSnapshots } from "./db/schema";
 
 dotenv.config();
 
-const app = express();
+// ─── Path Setup ───────────────────────────────────────────
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
+
+// ─── App Setup ────────────────────────────────────────────
+const app        = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*" } });
+const io         = new Server(httpServer, { cors: { origin: "*" } });
 
 app.use(cors());
 app.use(express.json());
 
+// ─── Health Check (must be FIRST before everything) ───────
+app.get("/health", (_, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // ─── In-Memory Online Users ───────────────────────────────
-const onlineUsers: Record<
-  string,
-  {
-    accountId: string;
-    username: string;
-    email: string;
-    roomId: string;
-    joinedAt: string;
-  }
-> = {};
+const onlineUsers: Record<string, {
+  accountId: string;
+  username:  string;
+  email:     string;
+  roomId:    string;
+  joinedAt:  string;
+}> = {};
 
 const stats = { totalConnections: 0, peakUsers: 0 };
 
 // ─── Dashboard Helper ─────────────────────────────────────
 async function sendDashboardUpdate(roomId: string) {
-  const usersInRoom = Object.values(onlineUsers).filter(
-    (u) => u.roomId === roomId,
-  );
-  const msgResult = await db
-    .select({ count: count() })
-    .from(messages)
-    .where(eq(messages.roomId, roomId));
+  const usersInRoom = Object.values(onlineUsers).filter((u) => u.roomId === roomId);
+  const msgResult   = await db.select({ count: count() }).from(messages).where(eq(messages.roomId, roomId));
 
   io.to(roomId).emit("dashboard-update", {
-    onlineUsers: usersInRoom.length,
-    userList: usersInRoom,
-    totalMessages: Number(msgResult[0]?.count ?? 0),
+    onlineUsers:      usersInRoom.length,
+    userList:         usersInRoom,
+    totalMessages:    Number(msgResult[0]?.count ?? 0),
     totalConnections: stats.totalConnections,
-    peakUsers: stats.peakUsers,
+    peakUsers:        stats.peakUsers,
   });
 }
 
 // ─── Auth Routes ──────────────────────────────────────────
-
-// Check if username is taken (case-insensitive)
 app.get("/api/auth/check-username/:username", async (req, res) => {
   const username = req.params.username.toLowerCase();
-
-  const existing = await db
-    .select()
-    .from(accounts)
-    .where(ilike(accounts.username, username));
-
+  const existing = await db.select().from(accounts).where(ilike(accounts.username, username));
   res.json({ available: existing.length === 0 });
 });
 
-// Suggest a unique username based on name input
 app.get("/api/auth/suggest-username/:name", async (req, res) => {
-  const base = req.params.name.toLowerCase().replace(/[^a-z0-9]/g, ""); // remove special chars
-
+  const base        = req.params.name.toLowerCase().replace(/[^a-z0-9]/g, "");
   const suggestions: string[] = [];
 
-  // Generate 4 suggestions with random 2-digit numbers
   while (suggestions.length < 4) {
-    const num = Math.floor(10 + Math.random() * 90); // always 2 digits
+    const num       = Math.floor(10 + Math.random() * 90);
     const candidate = `@${base}${num}`;
-
-    // Check if it's available
-    const existing = await db
-      .select()
-      .from(accounts)
-      .where(ilike(accounts.username, candidate.replace("@", "")));
-
-    if (existing.length === 0) {
-      suggestions.push(candidate);
-    }
+    const existing  = await db.select().from(accounts).where(ilike(accounts.username, candidate.replace("@", "")));
+    if (existing.length === 0) suggestions.push(candidate);
   }
 
   res.json({ suggestions });
 });
 
-// Register new account
 app.post("/api/auth/register", async (req, res) => {
   const { name, username, email, password } = req.body as {
-    name: string;
-    username: string;
-    email: string;
-    password: string;
+    name: string; username: string; email: string; password: string;
   };
 
-  // Check email already used
-  const emailExists = await db
-    .select()
-    .from(accounts)
-    .where(eq(accounts.email, email.toLowerCase()));
-
+  const emailExists = await db.select().from(accounts).where(eq(accounts.email, email.toLowerCase()));
   if (emailExists.length > 0) {
-    res.status(400).json({ error: "Something went wrong" });
+    res.status(400).json({ error: "Email already registered" });
     return;
   }
 
-  // Check username taken (case-insensitive)
-  const usernameExists = await db
-    .select()
-    .from(accounts)
-    .where(ilike(accounts.username, username.replace("@", "")));
-
+  const usernameExists = await db.select().from(accounts).where(ilike(accounts.username, username.replace("@", "")));
   if (usernameExists.length > 0) {
     res.status(400).json({ error: "Username already taken" });
     return;
   }
 
-  // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Save account
-  const newAccount = await db
-    .insert(accounts)
-    .values({
-      name,
-      username: username.replace("@", "").toLowerCase(),
-      email: email.toLowerCase(),
-      password: hashedPassword,
-    })
-    .returning();
+  const newAccount     = await db.insert(accounts).values({
+    name,
+    username:  username.replace("@", "").toLowerCase(),
+    email:     email.toLowerCase(),
+    password:  hashedPassword,
+  }).returning();
 
   const account = newAccount[0]!;
-
   res.json({
     message: "Account created successfully",
-    account: {
-      id: account.id,
-      name: account.name,
-      username: account.username,
-      email: account.email,
-    },
+    account: { id: account.id, name: account.name, username: account.username, email: account.email },
   });
 });
 
-// Login with username or email + password
 app.post("/api/auth/login", async (req, res) => {
-  const { identifier, password } = req.body as {
-    identifier: string; // can be username or email
-    password: string;
-  };
+  const { identifier, password } = req.body as { identifier: string; password: string };
 
-  // Find by email or username (case-insensitive)
   const isEmail = identifier.includes("@") && identifier.includes(".");
-  const found = isEmail
-    ? await db
-        .select()
-        .from(accounts)
-        .where(eq(accounts.email, identifier.toLowerCase()))
-    : await db
-        .select()
-        .from(accounts)
-        .where(ilike(accounts.username, identifier.replace("@", "")));
+  const found   = isEmail
+    ? await db.select().from(accounts).where(eq(accounts.email, identifier.toLowerCase()))
+    : await db.select().from(accounts).where(ilike(accounts.username, identifier.replace("@", "")));
 
   if (found.length === 0) {
     res.status(401).json({ error: "Account not found" });
@@ -174,8 +121,6 @@ app.post("/api/auth/login", async (req, res) => {
   }
 
   const account = found[0]!;
-
-  // Check password
   const isValid = await bcrypt.compare(password, account.password);
   if (!isValid) {
     res.status(401).json({ error: "Incorrect password" });
@@ -184,46 +129,30 @@ app.post("/api/auth/login", async (req, res) => {
 
   res.json({
     message: "Login successful",
-    account: {
-      id: account.id,
-      name: account.name,
-      username: account.username,
-      email: account.email,
-    },
+    account: { id: account.id, name: account.name, username: account.username, email: account.email },
   });
 });
 
 // ─── REST API ─────────────────────────────────────────────
 app.get("/api/messages/:roomId", async (req, res) => {
-  const result = await db
-    .select()
-    .from(messages)
-    .where(eq(messages.roomId, req.params.roomId))
-    .orderBy(messages.sentAt);
+  const result = await db.select().from(messages).where(eq(messages.roomId, req.params.roomId)).orderBy(messages.sentAt);
   res.json(result);
 });
 
 app.get("/api/users/:roomId", async (req, res) => {
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.roomId, req.params.roomId))
-    .orderBy(users.joinedAt);
+  const result = await db.select().from(users).where(eq(users.roomId, req.params.roomId)).orderBy(users.joinedAt);
   res.json(result);
 });
 
 app.get("/api/stats/:roomId", async (req, res) => {
   const { roomId } = req.params;
   const [msgCount, userCount] = await Promise.all([
-    db
-      .select({ count: count() })
-      .from(messages)
-      .where(eq(messages.roomId, roomId)),
+    db.select({ count: count() }).from(messages).where(eq(messages.roomId, roomId)),
     db.select({ count: count() }).from(users).where(eq(users.roomId, roomId)),
   ]);
   res.json({
     totalMessages: Number(msgCount[0]?.count ?? 0),
-    totalJoins: Number(userCount[0]?.count ?? 0),
+    totalJoins:    Number(userCount[0]?.count ?? 0),
   });
 });
 
@@ -232,127 +161,61 @@ io.on("connection", (socket) => {
   stats.totalConnections++;
   console.log(`[+] Connected: ${socket.id}`);
 
-  socket.on(
-    "join-room",
-    async ({
-      roomId,
+  socket.on("join-room", async ({ roomId, username, email, accountId }: {
+    roomId: string; username: string; email: string; accountId: string;
+  }) => {
+    socket.join(roomId);
+    socket.data.roomId    = roomId;
+    socket.data.username  = username;
+    socket.data.accountId = accountId;
+
+    onlineUsers[socket.id] = { accountId, username, email, roomId, joinedAt: new Date().toISOString() };
+
+    const total = Object.keys(onlineUsers).length;
+    if (total > stats.peakUsers) stats.peakUsers = total;
+
+    await db.insert(users).values({ accountId: String(accountId), socketId: socket.id, username, roomId });
+
+    const savedCanvas = await db.select().from(canvasSnapshots).where(eq(canvasSnapshots.roomId, roomId));
+    if (savedCanvas.length > 0) socket.emit("init", savedCanvas[0]?.snapshot);
+
+    const chatHistory = await db.select().from(messages).where(eq(messages.roomId, roomId)).orderBy(messages.sentAt);
+    if (chatHistory.length > 0) {
+      socket.emit("chat-history", chatHistory.map((msg) => ({
+        ...msg,
+        time: new Date(msg.sentAt!).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      })));
+    }
+
+    io.to(roomId).emit("user-joined", `@${username} joined the room`);
+    sendDashboardUpdate(roomId);
+    console.log(`[Room: ${roomId}] @${username} joined`);
+  });
+
+  socket.on("change", ({ roomId, changes }: { roomId: string; changes: unknown }) => {
+    socket.to(roomId).emit("change", changes);
+  });
+
+  socket.on("snapshot", async ({ roomId, snapshot }: { roomId: string; snapshot: unknown }) => {
+    await db.insert(canvasSnapshots).values({ roomId, snapshot, updatedAt: new Date() })
+      .onConflictDoUpdate({ target: canvasSnapshots.roomId, set: { snapshot, updatedAt: new Date() } });
+  });
+
+  socket.on("chat-message", async ({ roomId, message, username }: { roomId: string; message: string; username: string }) => {
+    const saved  = await db.insert(messages).values({ roomId, username, message }).returning();
+    const newMsg = {
+      id:       saved[0]?.id,
       username,
-      email,
-      accountId,
-    }: {
-      roomId: string;
-      username: string;
-      email: string;
-      accountId: string;
-    }) => {
-      socket.join(roomId);
-      socket.data.roomId = roomId;
-      socket.data.username = username;
-      socket.data.accountId = accountId;
-
-      onlineUsers[socket.id] = {
-        accountId,
-        username,
-        email,
-        roomId,
-        joinedAt: new Date().toISOString(),
-      };
-
-      const total = Object.keys(onlineUsers).length;
-      if (total > stats.peakUsers) stats.peakUsers = total;
-
-      await db.insert(users).values({
-        accountId: String(accountId),
-        socketId: socket.id,
-        username,
-        roomId,
-      });
-
-      const savedCanvas = await db
-        .select()
-        .from(canvasSnapshots)
-        .where(eq(canvasSnapshots.roomId, roomId));
-      if (savedCanvas.length > 0) socket.emit("init", savedCanvas[0]?.snapshot);
-
-      const chatHistory = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.roomId, roomId))
-        .orderBy(messages.sentAt);
-      if (chatHistory.length > 0) {
-        socket.emit(
-          "chat-history",
-          chatHistory.map((msg) => ({
-            ...msg,
-            time: new Date(msg.sentAt!).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          })),
-        );
-      }
-
-      io.to(roomId).emit("user-joined", `@${username} joined the room`);
-      sendDashboardUpdate(roomId);
-      console.log(`[Room: ${roomId}] @${username} joined`);
-    },
-  );
-
-  socket.on(
-    "change",
-    ({ roomId, changes }: { roomId: string; changes: unknown }) => {
-      socket.to(roomId).emit("change", changes);
-    },
-  );
-
-  socket.on(
-    "snapshot",
-    async ({ roomId, snapshot }: { roomId: string; snapshot: unknown }) => {
-      await db
-        .insert(canvasSnapshots)
-        .values({ roomId, snapshot, updatedAt: new Date() })
-        .onConflictDoUpdate({
-          target: canvasSnapshots.roomId,
-          set: { snapshot, updatedAt: new Date() },
-        });
-    },
-  );
-
-  socket.on(
-    "chat-message",
-    async ({
-      roomId,
       message,
-      username,
-    }: {
-      roomId: string;
-      message: string;
-      username: string;
-    }) => {
-      const saved = await db
-        .insert(messages)
-        .values({ roomId, username, message })
-        .returning();
-      const newMsg = {
-        id: saved[0]?.id,
-        username,
-        message,
-        time: new Date(saved[0]?.sentAt!).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      io.to(roomId).emit("chat-message", newMsg);
-      sendDashboardUpdate(roomId);
-    },
-  );
+      time: new Date(saved[0]?.sentAt!).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    io.to(roomId).emit("chat-message", newMsg);
+    sendDashboardUpdate(roomId);
+  });
 
   socket.on("disconnect", async () => {
     const { roomId, username } = socket.data;
-    await db
-      .update(users)
-      .set({ leftAt: new Date() })
-      .where(eq(users.socketId, socket.id));
+    await db.update(users).set({ leftAt: new Date() }).where(eq(users.socketId, socket.id));
     delete onlineUsers[socket.id];
     if (roomId && username) {
       io.to(roomId).emit("user-left", `@${username} left the room`);
@@ -362,27 +225,25 @@ io.on("connection", (socket) => {
   });
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// In production, serve the built React app
+// ─── Serve React in Production ────────────────────────────
 if (process.env.NODE_ENV === "production") {
-  // Serve static files from React build
-  app.use(express.static(path.join(__dirname, "../../client/dist")));
+  // In Docker: server is at /app/server/src/server.ts
+  // client/dist is at /app/client/dist
+  const clientDist = path.join(__dirname, "../../../client/dist");
 
-  // Any route not matched by API → send React app
+  console.log("Serving static files from:", clientDist);
+
+  app.use(express.static(clientDist));
+
+  // All non-API routes → React app
   app.get("*", (_, res) => {
-    res.sendFile(path.join(__dirname, "../../client/dist/index.html"));
+    res.sendFile(path.join(clientDist, "index.html"));
   });
 }
 
-// Railway uses this to check if app is running
-app.get("/health", (_, res) => {
-  res.status(200).json({ status: "ok" });
-});
+// ─── Start Server ─────────────────────────────────────────
+const PORT = Number(process.env.PORT) || 3001;
 
-const PORT = process.env.PORT ?? 3001;
-
-httpServer.listen(Number(PORT), "0.0.0.0", () => {
+httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
