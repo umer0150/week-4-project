@@ -246,14 +246,12 @@ io.on("connection", (socket) => {
       const total = Object.keys(onlineUsers).length;
       if (total > stats.peakUsers) stats.peakUsers = total;
 
-      await db
-        .insert(users)
-        .values({
-          accountId: String(accountId),
-          socketId: socket.id,
-          username,
-          roomId,
-        });
+      await db.insert(users).values({
+        accountId: String(accountId),
+        socketId: socket.id,
+        username,
+        roomId,
+      });
 
       const savedCanvas = await db
         .select()
@@ -349,7 +347,6 @@ io.on("connection", (socket) => {
   });
 });
 
-
 // ─── Serve React in Production ────────────────────────────
 if (process.env.NODE_ENV === "production") {
   const clientDist = path.join(__dirname, "../../../client/dist");
@@ -359,7 +356,7 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(clientDist));
 
   // Express 5 uses /* instead of *
-  app.get("/*", (_, res) => {
+  app.get("/*splat", (_, res) => {
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }
