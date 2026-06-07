@@ -146,4 +146,3 @@ dist
 */dist
 .env
 *.log
-drizzle/meta
