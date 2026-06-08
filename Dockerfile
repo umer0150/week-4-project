@@ -2,6 +2,15 @@
 FROM node:20-alpine AS client-build
 
 WORKDIR /app/client
+
+# Accept build args for Vite
+ARG VITE_TLDRAW_LICENSE_KEY
+ARG VITE_SERVER_URL
+
+# Make them available to Vite during build
+ENV VITE_TLDRAW_LICENSE_KEY=$VITE_TLDRAW_LICENSE_KEY
+ENV VITE_SERVER_URL=$VITE_SERVER_URL
+
 COPY client/package*.json ./
 RUN npm install
 COPY client/ ./
@@ -18,7 +27,6 @@ COPY server/ ./
 # ── Stage 3: Final image ────────────────────────────────────
 FROM node:20-alpine AS final
 
-# Install tsx globally so it's available at runtime
 RUN npm install -g tsx
 
 WORKDIR /app

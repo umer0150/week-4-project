@@ -584,7 +584,7 @@ function Chat({ account }: { account: Account }) {
 
   return (
     <div
-      className={`fixed bottom-0 right-0 sm:right-4
+      className={`fixed bottom-20 right-0 sm:right-4
         w-full sm:w-72
         bg-[#1e1e2e] rounded-t-xl shadow-2xl z-[99999] flex flex-col overflow-hidden transition-all duration-200
         ${open ? "h-80 sm:h-96" : "h-11"}`}
@@ -655,43 +655,6 @@ function Chat({ account }: { account: Account }) {
 }
 
 // ─── App Root ─────────────────────────────────────────────
-// export default function App() {
-//   const [account, setAccount] = useState<Account | null>(() => {
-//     const saved = localStorage.getItem("account");
-//     return saved ? JSON.parse(saved) : null;
-//   });
-
-//   const handleLogout = () => {
-//     localStorage.removeItem("account");
-//     setAccount(null);
-//     socket.disconnect();
-//     socket.connect();
-//   };
-
-//   if (!account) return <AuthScreen onLogin={setAccount} />;
-
-//   return (
-//     <div className="fixed inset-0">
-//       {/* Logout button — top right, safe on all screens */}
-//       <button
-//         onClick={handleLogout}
-//         className="fixed top-2 right-2 sm:right-14 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all touch-manipulation"
-//       >
-//         Logout
-//       </button>
-
-//       <Tldraw>
-//         <SyncLayer account={account} />
-//       </Tldraw>
-
-//       {/* On mobile: only one panel visible at a time via z-index stacking.
-//           Dashboard sits on left half, Chat on right half — both collapsed by default. */}
-//       <Dashboard account={account} />
-//       <Chat account={account} />
-//     </div>
-//   );
-// }
-
 export default function App() {
   const [account, setAccount] = useState<Account | null>(() => {
     const saved = localStorage.getItem("account");
@@ -708,19 +671,56 @@ export default function App() {
   if (!account) return <AuthScreen onLogin={setAccount} />;
 
   return (
-    // key={account.id} makes sure tldraw never remounts on re-render
-    <div key={account.id} className="fixed inset-0">
+    <div className="fixed inset-0">
+      {/* Logout button — top right, safe on all screens */}
       <button
         onClick={handleLogout}
-        className="fixed top-2 right-80 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all"
+        className="fixed top-2 right-2 sm:right-14 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all touch-manipulation"
       >
         Logout
       </button>
+
       <Tldraw licenseKey={import.meta.env.VITE_TLDRAW_LICENSE_KEY}>
         <SyncLayer account={account} />
       </Tldraw>
+
+      {/* On mobile: only one panel visible at a time via z-index stacking.
+          Dashboard sits on left half, Chat on right half — both collapsed by default. */}
       <Dashboard account={account} />
       <Chat account={account} />
     </div>
   );
 }
+
+// export default function App() {
+//   const [account, setAccount] = useState<Account | null>(() => {
+//     const saved = localStorage.getItem("account");
+//     return saved ? JSON.parse(saved) : null;
+//   });
+
+//   const handleLogout = () => {
+//     localStorage.removeItem("account");
+//     setAccount(null);
+//     socket.disconnect();
+//     socket.connect();
+//   };
+
+//   if (!account) return <AuthScreen onLogin={setAccount} />;
+
+//   return (
+//     // key={account.id} makes sure tldraw never remounts on re-render
+//     <div key={account.id} className="fixed inset-0">
+//       <button
+//         onClick={handleLogout}
+//         className="fixed top-2 right-80 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all"
+//       >
+//         Logout
+//       </button>
+//       <Tldraw licenseKey={import.meta.env.VITE_TLDRAW_LICENSE_KEY}>
+//         <SyncLayer account={account} />
+//       </Tldraw>
+//       <Dashboard account={account} />
+//       <Chat account={account} />
+//     </div>
+//   );
+// }
