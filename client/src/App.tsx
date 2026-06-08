@@ -121,7 +121,10 @@ function RegisterForm({
         body: JSON.stringify(data),
       });
       const json = await res.json();
-      if (!res.ok) { setServerError(json.error); return; }
+      if (!res.ok) {
+        setServerError(json.error);
+        return;
+      }
       localStorage.setItem("account", JSON.stringify(json.account));
       onSuccess(json.account);
     } catch {
@@ -149,8 +152,12 @@ function RegisterForm({
           />
           <div className="absolute right-3 top-3 text-xs">
             {checkingUser && <span className="text-white/30">checking...</span>}
-            {!checkingUser && userAvailable === true && <span className="text-emerald-400">✓ available</span>}
-            {!checkingUser && userAvailable === false && <span className="text-red-400">✗ taken</span>}
+            {!checkingUser && userAvailable === true && (
+              <span className="text-emerald-400">✓ available</span>
+            )}
+            {!checkingUser && userAvailable === false && (
+              <span className="text-red-400">✗ taken</span>
+            )}
           </div>
         </div>
         {suggestions.length > 0 && (
@@ -242,7 +249,10 @@ function LoginFormComponent({
         body: JSON.stringify(data),
       });
       const json = await res.json();
-      if (!res.ok) { setServerError(json.error); return; }
+      if (!res.ok) {
+        setServerError(json.error);
+        return;
+      }
       localStorage.setItem("account", JSON.stringify(json.account));
       onSuccess(json.account);
     } catch {
@@ -304,7 +314,9 @@ function AuthScreen({ onLogin }: { onLogin: (account: Account) => void }) {
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1] animate-pulse" />
-            <h1 className="text-xl sm:text-2xl font-bold text-white">CollabCanvas</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              CollabCanvas
+            </h1>
           </div>
           <p className="text-white/40 text-xs sm:text-sm">
             Real-time collaborative whiteboard
@@ -326,7 +338,10 @@ function AuthScreen({ onLogin }: { onLogin: (account: Account) => void }) {
         </div>
 
         {mode === "login" ? (
-          <LoginFormComponent onSuccess={onLogin} onSwitch={() => setMode("register")} />
+          <LoginFormComponent
+            onSuccess={onLogin}
+            onSwitch={() => setMode("register")}
+          />
         ) : (
           <RegisterForm onSuccess={onLogin} onSwitch={() => setMode("login")} />
         )}
@@ -337,15 +352,15 @@ function AuthScreen({ onLogin }: { onLogin: (account: Account) => void }) {
 
 // ─── Canvas Sync ──────────────────────────────────────────
 function SyncLayer({ account }: { account: Account }) {
-  const editor   = useEditor();
+  const editor = useEditor();
   const isRemote = useRef(false);
-  const hasInit  = useRef(false); // prevent multiple snapshot loads
+  const hasInit = useRef(false); // prevent multiple snapshot loads
 
   useEffect(() => {
     socket.emit("join-room", {
-      roomId:    ROOM,
-      username:  account.username,
-      email:     account.email,
+      roomId: ROOM,
+      username: account.username,
+      email: account.email,
       accountId: account.id,
     });
 
@@ -353,7 +368,7 @@ function SyncLayer({ account }: { account: Account }) {
     socket.on("init", (snapshot) => {
       if (hasInit.current) return; // ignore if already loaded
       hasInit.current = true;
-      
+
       // Small delay so tldraw is fully mounted before loading snapshot
       setTimeout(() => {
         try {
@@ -369,12 +384,14 @@ function SyncLayer({ account }: { account: Account }) {
       isRemote.current = true;
       try {
         editor.store.mergeRemoteChanges(() => {
-          const added   = changes.added   as Record<string, any>;
+          const added = changes.added as Record<string, any>;
           const updated = changes.updated as Record<string, [any, any]>;
           const removed = changes.removed as Record<string, any>;
-          Object.values(added).forEach((r)          => editor.store.put([r]));
-          Object.values(updated).forEach(([, next]) => editor.store.put([next]));
-          Object.values(removed).forEach((r)        => editor.store.remove([r.id]));
+          Object.values(added).forEach((r) => editor.store.put([r]));
+          Object.values(updated).forEach(([, next]) =>
+            editor.store.put([next]),
+          );
+          Object.values(removed).forEach((r) => editor.store.remove([r.id]));
         });
       } catch (e) {
         console.warn("Change apply failed:", e);
@@ -397,13 +414,16 @@ function SyncLayer({ account }: { account: Account }) {
         clearTimeout(snapshotTimeout);
         snapshotTimeout = setTimeout(() => {
           try {
-            socket.emit("snapshot", { roomId: ROOM, snapshot: editor.getSnapshot() });
+            socket.emit("snapshot", {
+              roomId: ROOM,
+              snapshot: editor.getSnapshot(),
+            });
           } catch (e) {
             console.warn("Snapshot save failed:", e);
           }
         }, 1000);
       },
-      { source: "user", scope: "document" }
+      { source: "user", scope: "document" },
     );
 
     return () => {
@@ -431,7 +451,9 @@ function Dashboard({ account }: { account: Account }) {
 
   useEffect(() => {
     socket.on("dashboard-update", (data: DashboardStats) => setStats(data));
-    return () => { socket.off("dashboard-update"); };
+    return () => {
+      socket.off("dashboard-update");
+    };
   }, []);
 
   const activityPct = Math.min(
@@ -483,19 +505,46 @@ function Dashboard({ account }: { account: Account }) {
               <>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: stats.onlineUsers, label: "Online Now", color: "text-emerald-400" },
-                    { value: stats.peakUsers, label: "Peak Users", color: "text-indigo-400" },
-                    { value: stats.totalMessages, label: "Messages", color: "text-purple-400" },
-                    { value: stats.totalConnections, label: "Total Joins", color: "text-orange-400" },
+                    {
+                      value: stats.onlineUsers,
+                      label: "Online Now",
+                      color: "text-emerald-400",
+                    },
+                    {
+                      value: stats.peakUsers,
+                      label: "Peak Users",
+                      color: "text-indigo-400",
+                    },
+                    {
+                      value: stats.totalMessages,
+                      label: "Messages",
+                      color: "text-purple-400",
+                    },
+                    {
+                      value: stats.totalConnections,
+                      label: "Total Joins",
+                      color: "text-orange-400",
+                    },
                   ].map((s) => (
-                    <div key={s.label} className="bg-[#16162a] rounded-lg p-2.5 sm:p-3 text-center">
-                      <div className={`text-xl sm:text-2xl font-extrabold ${s.color}`}>{s.value}</div>
-                      <div className="text-[10px] text-white/35 uppercase tracking-widest mt-1">{s.label}</div>
+                    <div
+                      key={s.label}
+                      className="bg-[#16162a] rounded-lg p-2.5 sm:p-3 text-center"
+                    >
+                      <div
+                        className={`text-xl sm:text-2xl font-extrabold ${s.color}`}
+                      >
+                        {s.value}
+                      </div>
+                      <div className="text-[10px] text-white/35 uppercase tracking-widest mt-1">
+                        {s.label}
+                      </div>
                     </div>
                   ))}
                 </div>
                 <div>
-                  <div className="text-[11px] text-white/40 mb-1">Room Activity</div>
+                  <div className="text-[11px] text-white/40 mb-1">
+                    Room Activity
+                  </div>
                   <div className="h-1.5 bg-[#16162a] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-indigo-400 to-emerald-400 rounded-full transition-all duration-500"
@@ -507,9 +556,15 @@ function Dashboard({ account }: { account: Account }) {
                   </div>
                 </div>
                 <div className="bg-[#16162a] rounded-lg px-3 py-2 space-y-0.5">
-                  <div className="text-[10px] text-white/30 uppercase tracking-widest">Logged in as</div>
-                  <div className="text-sm text-white font-semibold">{account.name}</div>
-                  <div className="text-[11px] text-indigo-400">@{account.username}</div>
+                  <div className="text-[10px] text-white/30 uppercase tracking-widest">
+                    Logged in as
+                  </div>
+                  <div className="text-sm text-white font-semibold">
+                    {account.name}
+                  </div>
+                  <div className="text-[11px] text-indigo-400">
+                    @{account.username}
+                  </div>
                 </div>
               </>
             )}
@@ -517,10 +572,15 @@ function Dashboard({ account }: { account: Account }) {
             {tab === "users" && (
               <div className="space-y-2">
                 {stats.userList.length === 0 ? (
-                  <div className="text-center text-white/30 text-sm mt-10">No users online</div>
+                  <div className="text-center text-white/30 text-sm mt-10">
+                    No users online
+                  </div>
                 ) : (
                   stats.userList.map((u, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-[#16162a] rounded-lg px-3 py-2">
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 bg-[#16162a] rounded-lg px-3 py-2"
+                    >
                       <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                         {u.username[0]?.toUpperCase()}
                       </div>
@@ -533,7 +593,9 @@ function Dashboard({ account }: { account: Account }) {
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] text-white/30 truncate">{u.email}</div>
+                        <div className="text-[10px] text-white/30 truncate">
+                          {u.email}
+                        </div>
                       </div>
                       <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_4px_#34d399] flex-shrink-0" />
                     </div>
@@ -559,10 +621,28 @@ function Chat({ account }: { account: Account }) {
     socket.on("chat-history", (h: Message[]) => setMessages(h));
     socket.on("chat-message", (m: Message) => setMessages((p) => [...p, m]));
     socket.on("user-joined", (t: string) =>
-      setMessages((p) => [...p, { id: Date.now(), username: "system", message: t, time: "", isSystem: true }])
+      setMessages((p) => [
+        ...p,
+        {
+          id: Date.now(),
+          username: "system",
+          message: t,
+          time: "",
+          isSystem: true,
+        },
+      ]),
     );
     socket.on("user-left", (t: string) =>
-      setMessages((p) => [...p, { id: Date.now(), username: "system", message: t, time: "", isSystem: true }])
+      setMessages((p) => [
+        ...p,
+        {
+          id: Date.now(),
+          username: "system",
+          message: t,
+          time: "",
+          isSystem: true,
+        },
+      ]),
     );
     return () => {
       socket.off("chat-history");
@@ -578,13 +658,17 @@ function Chat({ account }: { account: Account }) {
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    socket.emit("chat-message", { roomId: ROOM, message: input.trim(), username: account.username });
+    socket.emit("chat-message", {
+      roomId: ROOM,
+      message: input.trim(),
+      username: account.username,
+    });
     setInput("");
   };
 
   return (
     <div
-      className={`fixed bottom-20 right-0 sm:right-4
+      className={`fixed bottom-0 right-0 sm:right-4
         w-full sm:w-72
         bg-[#1e1e2e] rounded-t-xl shadow-2xl z-[99999] flex flex-col overflow-hidden transition-all duration-200
         ${open ? "h-80 sm:h-96" : "h-11"}`}
@@ -608,7 +692,10 @@ function Chat({ account }: { account: Account }) {
             )}
             {messages.map((msg) =>
               msg.isSystem ? (
-                <div key={msg.id} className="text-center text-white/30 text-xs italic">
+                <div
+                  key={msg.id}
+                  className="text-center text-white/30 text-xs italic"
+                >
                   {msg.message}
                 </div>
               ) : (
@@ -618,7 +705,9 @@ function Chat({ account }: { account: Account }) {
                     ${msg.username === account.username ? "self-end items-end" : "self-start items-start"}`}
                 >
                   {msg.username !== account.username && (
-                    <span className="text-[10px] text-white/40 px-1">@{msg.username}</span>
+                    <span className="text-[10px] text-white/40 px-1">
+                      @{msg.username}
+                    </span>
                   )}
                   <div
                     className={`px-3 py-2 rounded-xl text-sm text-white leading-snug break-words
@@ -626,9 +715,11 @@ function Chat({ account }: { account: Account }) {
                   >
                     {msg.message}
                   </div>
-                  <span className="text-[10px] text-white/25 px-1">{msg.time}</span>
+                  <span className="text-[10px] text-white/25 px-1">
+                    {msg.time}
+                  </span>
                 </div>
-              )
+              ),
             )}
             <div ref={bottomRef} />
           </div>
@@ -675,7 +766,7 @@ export default function App() {
       {/* Logout button — top right, safe on all screens */}
       <button
         onClick={handleLogout}
-        className="fixed top-2 right-2 sm:right-14 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all touch-manipulation"
+        className="fixed top-5 right-2 sm:right-50 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all touch-manipulation"
       >
         Logout
       </button>
