@@ -716,7 +716,7 @@ export default function App() {
       >
         Logout
       </button>
-      <Tldraw>
+      <Tldraw licenseKey={import.meta.env.VITE_TLDRAW_LICENSE_KEY}>
         <SyncLayer account={account} />
       </Tldraw>
       <Dashboard account={account} />
