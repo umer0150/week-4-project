@@ -13,7 +13,6 @@ const SOCKET_URL = import.meta.env.PROD
 const API = import.meta.env.PROD ? "/api" : "http://localhost:3001/api";
 
 const socket = io(SOCKET_URL);
-
 const ROOM = "room-1";
 
 interface Account {
@@ -87,26 +86,21 @@ function RegisterForm({
   const nameValue = watch("name");
   const usernameValue = watch("username");
 
-  // Fetch username suggestions when name changes
   useEffect(() => {
     if (!nameValue || nameValue.length < 2) return;
-
     const timeout = setTimeout(async () => {
       const res = await fetch(`${API}/auth/suggest-username/${nameValue}`);
       const data = await res.json();
       setSuggestions(data.suggestions ?? []);
     }, 500);
-
     return () => clearTimeout(timeout);
   }, [nameValue]);
 
-  // Check if username is available as user types
   useEffect(() => {
     if (!usernameValue || usernameValue.length < 3) {
       setUserAvailable(null);
       return;
     }
-
     setCheckingUser(true);
     const timeout = setTimeout(async () => {
       const clean = usernameValue.replace("@", "");
@@ -115,7 +109,6 @@ function RegisterForm({
       setUserAvailable(data.available);
       setCheckingUser(false);
     }, 400);
-
     return () => clearTimeout(timeout);
   }, [usernameValue]);
 
@@ -128,10 +121,7 @@ function RegisterForm({
         body: JSON.stringify(data),
       });
       const json = await res.json();
-      if (!res.ok) {
-        setServerError(json.error);
-        return;
-      }
+      if (!res.ok) { setServerError(json.error); return; }
       localStorage.setItem("account", JSON.stringify(json.account));
       onSuccess(json.account);
     } catch {
@@ -145,38 +135,24 @@ function RegisterForm({
         <input
           {...register("name")}
           placeholder="John Doe"
-          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
+          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
         />
       </Field>
 
-      {/* Username field with availability check */}
       <Field label="Username" error={errors.username?.message}>
         <div className="relative">
           <input
             {...register("username")}
             placeholder="@ali12"
-            className={`w-full bg-[#16162a] border rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors placeholder:text-white/20
-              ${
-                userAvailable === true
-                  ? "border-emerald-500"
-                  : userAvailable === false
-                    ? "border-red-500"
-                    : "border-white/10 focus:border-indigo-500"
-              }`}
+            className={`w-full bg-[#16162a] border rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-white text-sm outline-none transition-colors placeholder:text-white/20
+              ${userAvailable === true ? "border-emerald-500" : userAvailable === false ? "border-red-500" : "border-white/10 focus:border-indigo-500"}`}
           />
-          {/* Availability indicator */}
-          <div className="absolute right-3 top-3.5 text-xs">
+          <div className="absolute right-3 top-3 text-xs">
             {checkingUser && <span className="text-white/30">checking...</span>}
-            {!checkingUser && userAvailable === true && (
-              <span className="text-emerald-400">✓ available</span>
-            )}
-            {!checkingUser && userAvailable === false && (
-              <span className="text-red-400">✗ taken</span>
-            )}
+            {!checkingUser && userAvailable === true && <span className="text-emerald-400">✓ available</span>}
+            {!checkingUser && userAvailable === false && <span className="text-red-400">✗ taken</span>}
           </div>
         </div>
-
-        {/* Username suggestions */}
         {suggestions.length > 0 && (
           <div className="mt-2">
             <p className="text-[10px] text-white/30 mb-1">Suggestions:</p>
@@ -201,7 +177,7 @@ function RegisterForm({
           {...register("email")}
           type="email"
           placeholder="john@example.com"
-          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
+          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
         />
       </Field>
 
@@ -210,7 +186,7 @@ function RegisterForm({
           {...register("password")}
           type="password"
           placeholder="••••••••"
-          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
+          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
         />
       </Field>
 
@@ -223,7 +199,7 @@ function RegisterForm({
       <button
         onClick={handleSubmit(onSubmit)}
         disabled={isSubmitting || userAvailable === false}
-        className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+        className="w-full bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm touch-manipulation"
       >
         {isSubmitting ? "Creating account..." : "Create Account →"}
       </button>
@@ -266,10 +242,7 @@ function LoginFormComponent({
         body: JSON.stringify(data),
       });
       const json = await res.json();
-      if (!res.ok) {
-        setServerError(json.error);
-        return;
-      }
+      if (!res.ok) { setServerError(json.error); return; }
       localStorage.setItem("account", JSON.stringify(json.account));
       onSuccess(json.account);
     } catch {
@@ -283,7 +256,7 @@ function LoginFormComponent({
         <input
           {...register("identifier")}
           placeholder="@ali12 or john@example.com"
-          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
+          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
         />
       </Field>
 
@@ -292,7 +265,7 @@ function LoginFormComponent({
           {...register("password")}
           type="password"
           placeholder="••••••••"
-          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
+          className="w-full bg-[#16162a] border border-white/10 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder:text-white/20"
         />
       </Field>
 
@@ -305,7 +278,7 @@ function LoginFormComponent({
       <button
         onClick={handleSubmit(onSubmit)}
         disabled={isSubmitting}
-        className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+        className="w-full bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors text-sm touch-manipulation"
       >
         {isSubmitting ? "Logging in..." : "Login →"}
       </button>
@@ -320,36 +293,32 @@ function LoginFormComponent({
   );
 }
 
-// ─── Auth Screen (wraps both forms) ──────────────────────
+// ─── Auth Screen ──────────────────────────────────────────
 function AuthScreen({ onLogin }: { onLogin: (account: Account) => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0f] flex items-center justify-center p-4">
-      <div className="bg-[#1e1e2e] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/10">
+    <div className="fixed inset-0 bg-[#0a0a0f] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-[#1e1e2e] rounded-2xl p-5 sm:p-8 w-full max-w-md shadow-2xl border border-white/10 my-auto">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1] animate-pulse" />
-            <h1 className="text-2xl font-bold text-white">CollabCanvas</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">CollabCanvas</h1>
           </div>
-          <p className="text-white/40 text-sm">
+          <p className="text-white/40 text-xs sm:text-sm">
             Real-time collaborative whiteboard
           </p>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex bg-[#16162a] rounded-lg p-1 mb-6">
+        <div className="flex bg-[#16162a] rounded-lg p-1 mb-5 sm:mb-6">
           {(["login", "register"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all capitalize
-                ${
-                  mode === m
-                    ? "bg-indigo-500 text-white"
-                    : "text-white/40 hover:text-white/60"
-                }`}
+              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all capitalize touch-manipulation
+                ${mode === m ? "bg-indigo-500 text-white" : "text-white/40 hover:text-white/60"}`}
             >
               {m}
             </button>
@@ -357,10 +326,7 @@ function AuthScreen({ onLogin }: { onLogin: (account: Account) => void }) {
         </div>
 
         {mode === "login" ? (
-          <LoginFormComponent
-            onSuccess={onLogin}
-            onSwitch={() => setMode("register")}
-          />
+          <LoginFormComponent onSuccess={onLogin} onSwitch={() => setMode("register")} />
         ) : (
           <RegisterForm onSuccess={onLogin} onSwitch={() => setMode("login")} />
         )}
@@ -371,46 +337,78 @@ function AuthScreen({ onLogin }: { onLogin: (account: Account) => void }) {
 
 // ─── Canvas Sync ──────────────────────────────────────────
 function SyncLayer({ account }: { account: Account }) {
-  const editor = useEditor();
+  const editor   = useEditor();
   const isRemote = useRef(false);
+  const hasInit  = useRef(false); // prevent multiple snapshot loads
 
   useEffect(() => {
     socket.emit("join-room", {
-      roomId: ROOM,
-      username: account.username,
-      email: account.email,
+      roomId:    ROOM,
+      username:  account.username,
+      email:     account.email,
       accountId: account.id,
     });
 
-    socket.on("init", (snapshot) => editor.loadSnapshot(snapshot));
+    // Load saved canvas only ONCE
+    socket.on("init", (snapshot) => {
+      if (hasInit.current) return; // ignore if already loaded
+      hasInit.current = true;
+      
+      // Small delay so tldraw is fully mounted before loading snapshot
+      setTimeout(() => {
+        try {
+          editor.loadSnapshot(snapshot);
+        } catch (e) {
+          console.warn("Snapshot load failed:", e);
+        }
+      }, 100);
+    });
 
+    // Apply changes from other users
     socket.on("change", (changes) => {
       isRemote.current = true;
-      editor.store.mergeRemoteChanges(() => {
-        const added = changes.added as Record<string, any>;
-        const updated = changes.updated as Record<string, [any, any]>;
-        const removed = changes.removed as Record<string, any>;
-        Object.values(added).forEach((r) => editor.store.put([r]));
-        Object.values(updated).forEach(([, next]) => editor.store.put([next]));
-        Object.values(removed).forEach((r) => editor.store.remove([r.id]));
-      });
-      isRemote.current = false;
+      try {
+        editor.store.mergeRemoteChanges(() => {
+          const added   = changes.added   as Record<string, any>;
+          const updated = changes.updated as Record<string, [any, any]>;
+          const removed = changes.removed as Record<string, any>;
+          Object.values(added).forEach((r)          => editor.store.put([r]));
+          Object.values(updated).forEach(([, next]) => editor.store.put([next]));
+          Object.values(removed).forEach((r)        => editor.store.remove([r.id]));
+        });
+      } catch (e) {
+        console.warn("Change apply failed:", e);
+      } finally {
+        isRemote.current = false;
+      }
     });
+
+    // Send our changes — throttled to avoid too many snapshot saves
+    let snapshotTimeout: ReturnType<typeof setTimeout>;
 
     const unsub = editor.store.listen(
       (entry) => {
         if (isRemote.current) return;
+
+        // Send changes immediately
         socket.emit("change", { roomId: ROOM, changes: entry.changes });
-        socket.emit("snapshot", {
-          roomId: ROOM,
-          snapshot: editor.getSnapshot(),
-        });
+
+        // Debounce snapshot saves — only save after 1s of no changes
+        clearTimeout(snapshotTimeout);
+        snapshotTimeout = setTimeout(() => {
+          try {
+            socket.emit("snapshot", { roomId: ROOM, snapshot: editor.getSnapshot() });
+          } catch (e) {
+            console.warn("Snapshot save failed:", e);
+          }
+        }, 1000);
       },
-      { source: "user", scope: "document" },
+      { source: "user", scope: "document" }
     );
 
     return () => {
       unsub();
+      clearTimeout(snapshotTimeout);
       socket.off("init");
       socket.off("change");
     };
@@ -428,14 +426,12 @@ function Dashboard({ account }: { account: Account }) {
     totalConnections: 0,
     peakUsers: 0,
   });
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"stats" | "users">("stats");
 
   useEffect(() => {
     socket.on("dashboard-update", (data: DashboardStats) => setStats(data));
-    return () => {
-      socket.off("dashboard-update");
-    };
+    return () => { socket.off("dashboard-update"); };
   }, []);
 
   const activityPct = Math.min(
@@ -445,10 +441,14 @@ function Dashboard({ account }: { account: Account }) {
 
   return (
     <div
-      className={`fixed bottom-0 left-30 w-72 bg-[#1e1e2e] rounded-t-xl shadow-2xl z-[99999] flex flex-col overflow-hidden transition-all duration-200 ${open ? "h-96" : "h-11"}`}
+      className={`fixed bottom-0 left-0 sm:left-30
+        w-full sm:w-72
+        bg-[#1e1e2e] rounded-t-xl shadow-2xl z-[99999] flex flex-col overflow-hidden transition-all duration-200
+        ${open ? "h-80 sm:h-96" : "h-11"}`}
     >
+      {/* Header */}
       <div
-        className="flex justify-between items-center px-4 h-11 bg-[#2a2a3e] cursor-pointer text-white font-semibold text-sm flex-shrink-0"
+        className="flex justify-between items-center px-4 h-11 bg-[#2a2a3e] cursor-pointer text-white font-semibold text-sm flex-shrink-0 touch-manipulation"
         onClick={() => setOpen(!open)}
       >
         <div className="flex items-center gap-2">
@@ -470,7 +470,8 @@ function Dashboard({ account }: { account: Account }) {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 py-2 text-xs font-semibold border-b-2 transition-all capitalize ${tab === t ? "text-indigo-400 border-indigo-400" : "text-white/40 border-transparent"}`}
+                className={`flex-1 py-2 text-xs font-semibold border-b-2 transition-all capitalize touch-manipulation
+                  ${tab === t ? "text-indigo-400 border-indigo-400" : "text-white/40 border-transparent"}`}
               >
                 {t === "users" ? `Users (${stats.onlineUsers})` : "Stats"}
               </button>
@@ -482,44 +483,19 @@ function Dashboard({ account }: { account: Account }) {
               <>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    {
-                      value: stats.onlineUsers,
-                      label: "Online Now",
-                      color: "text-emerald-400",
-                    },
-                    {
-                      value: stats.peakUsers,
-                      label: "Peak Users",
-                      color: "text-indigo-400",
-                    },
-                    {
-                      value: stats.totalMessages,
-                      label: "Messages",
-                      color: "text-purple-400",
-                    },
-                    {
-                      value: stats.totalConnections,
-                      label: "Total Joins",
-                      color: "text-orange-400",
-                    },
+                    { value: stats.onlineUsers, label: "Online Now", color: "text-emerald-400" },
+                    { value: stats.peakUsers, label: "Peak Users", color: "text-indigo-400" },
+                    { value: stats.totalMessages, label: "Messages", color: "text-purple-400" },
+                    { value: stats.totalConnections, label: "Total Joins", color: "text-orange-400" },
                   ].map((s) => (
-                    <div
-                      key={s.label}
-                      className="bg-[#16162a] rounded-lg p-3 text-center"
-                    >
-                      <div className={`text-2xl font-extrabold ${s.color}`}>
-                        {s.value}
-                      </div>
-                      <div className="text-[10px] text-white/35 uppercase tracking-widest mt-1">
-                        {s.label}
-                      </div>
+                    <div key={s.label} className="bg-[#16162a] rounded-lg p-2.5 sm:p-3 text-center">
+                      <div className={`text-xl sm:text-2xl font-extrabold ${s.color}`}>{s.value}</div>
+                      <div className="text-[10px] text-white/35 uppercase tracking-widest mt-1">{s.label}</div>
                     </div>
                   ))}
                 </div>
                 <div>
-                  <div className="text-[11px] text-white/40 mb-1">
-                    Room Activity
-                  </div>
+                  <div className="text-[11px] text-white/40 mb-1">Room Activity</div>
                   <div className="h-1.5 bg-[#16162a] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-indigo-400 to-emerald-400 rounded-full transition-all duration-500"
@@ -531,15 +507,9 @@ function Dashboard({ account }: { account: Account }) {
                   </div>
                 </div>
                 <div className="bg-[#16162a] rounded-lg px-3 py-2 space-y-0.5">
-                  <div className="text-[10px] text-white/30 uppercase tracking-widest">
-                    Logged in as
-                  </div>
-                  <div className="text-sm text-white font-semibold">
-                    {account.name}
-                  </div>
-                  <div className="text-[11px] text-indigo-400">
-                    @{account.username}
-                  </div>
+                  <div className="text-[10px] text-white/30 uppercase tracking-widest">Logged in as</div>
+                  <div className="text-sm text-white font-semibold">{account.name}</div>
+                  <div className="text-[11px] text-indigo-400">@{account.username}</div>
                 </div>
               </>
             )}
@@ -547,15 +517,10 @@ function Dashboard({ account }: { account: Account }) {
             {tab === "users" && (
               <div className="space-y-2">
                 {stats.userList.length === 0 ? (
-                  <div className="text-center text-white/30 text-sm mt-10">
-                    No users online
-                  </div>
+                  <div className="text-center text-white/30 text-sm mt-10">No users online</div>
                 ) : (
                   stats.userList.map((u, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 bg-[#16162a] rounded-lg px-3 py-2"
-                    >
+                    <div key={i} className="flex items-center gap-2 bg-[#16162a] rounded-lg px-3 py-2">
                       <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                         {u.username[0]?.toUpperCase()}
                       </div>
@@ -568,9 +533,7 @@ function Dashboard({ account }: { account: Account }) {
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] text-white/30 truncate">
-                          {u.email}
-                        </div>
+                        <div className="text-[10px] text-white/30 truncate">{u.email}</div>
                       </div>
                       <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_4px_#34d399] flex-shrink-0" />
                     </div>
@@ -589,35 +552,17 @@ function Dashboard({ account }: { account: Account }) {
 function Chat({ account }: { account: Account }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     socket.on("chat-history", (h: Message[]) => setMessages(h));
     socket.on("chat-message", (m: Message) => setMessages((p) => [...p, m]));
     socket.on("user-joined", (t: string) =>
-      setMessages((p) => [
-        ...p,
-        {
-          id: Date.now(),
-          username: "system",
-          message: t,
-          time: "",
-          isSystem: true,
-        },
-      ]),
+      setMessages((p) => [...p, { id: Date.now(), username: "system", message: t, time: "", isSystem: true }])
     );
     socket.on("user-left", (t: string) =>
-      setMessages((p) => [
-        ...p,
-        {
-          id: Date.now(),
-          username: "system",
-          message: t,
-          time: "",
-          isSystem: true,
-        },
-      ]),
+      setMessages((p) => [...p, { id: Date.now(), username: "system", message: t, time: "", isSystem: true }])
     );
     return () => {
       socket.off("chat-history");
@@ -633,20 +578,20 @@ function Chat({ account }: { account: Account }) {
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    socket.emit("chat-message", {
-      roomId: ROOM,
-      message: input.trim(),
-      username: account.username,
-    });
+    socket.emit("chat-message", { roomId: ROOM, message: input.trim(), username: account.username });
     setInput("");
   };
 
   return (
     <div
-      className={`fixed bottom-0 right-4 w-72 bg-[#1e1e2e] rounded-t-xl shadow-2xl z-[99999] flex flex-col overflow-hidden transition-all duration-200 ${open ? "h-96" : "h-11"}`}
+      className={`fixed bottom-0 right-0 sm:right-4
+        w-full sm:w-72
+        bg-[#1e1e2e] rounded-t-xl shadow-2xl z-[99999] flex flex-col overflow-hidden transition-all duration-200
+        ${open ? "h-80 sm:h-96" : "h-11"}`}
     >
+      {/* Header */}
       <div
-        className="flex justify-between items-center px-4 h-11 bg-[#2a2a3e] cursor-pointer text-white font-semibold text-sm flex-shrink-0"
+        className="flex justify-between items-center px-4 h-11 bg-[#2a2a3e] cursor-pointer text-white font-semibold text-sm flex-shrink-0 touch-manipulation"
         onClick={() => setOpen(!open)}
       >
         <span>💬 Group Chat</span>
@@ -663,35 +608,31 @@ function Chat({ account }: { account: Account }) {
             )}
             {messages.map((msg) =>
               msg.isSystem ? (
-                <div
-                  key={msg.id}
-                  className="text-center text-white/30 text-xs italic"
-                >
+                <div key={msg.id} className="text-center text-white/30 text-xs italic">
                   {msg.message}
                 </div>
               ) : (
                 <div
                   key={msg.id}
-                  className={`flex flex-col gap-0.5 max-w-[85%] ${msg.username === account.username ? "self-end items-end" : "self-start items-start"}`}
+                  className={`flex flex-col gap-0.5 max-w-[85%]
+                    ${msg.username === account.username ? "self-end items-end" : "self-start items-start"}`}
                 >
                   {msg.username !== account.username && (
-                    <span className="text-[10px] text-white/40 px-1">
-                      @{msg.username}
-                    </span>
+                    <span className="text-[10px] text-white/40 px-1">@{msg.username}</span>
                   )}
                   <div
-                    className={`px-3 py-2 rounded-xl text-sm text-white leading-snug break-words ${msg.username === account.username ? "bg-indigo-500 rounded-br-sm" : "bg-[#2e2e42] rounded-bl-sm"}`}
+                    className={`px-3 py-2 rounded-xl text-sm text-white leading-snug break-words
+                      ${msg.username === account.username ? "bg-indigo-500 rounded-br-sm" : "bg-[#2e2e42] rounded-bl-sm"}`}
                   >
                     {msg.message}
                   </div>
-                  <span className="text-[10px] text-white/25 px-1">
-                    {msg.time}
-                  </span>
+                  <span className="text-[10px] text-white/25 px-1">{msg.time}</span>
                 </div>
-              ),
+              )
             )}
             <div ref={bottomRef} />
           </div>
+
           <div className="flex gap-2 p-2.5 bg-[#2a2a3e] flex-shrink-0">
             <input
               className="flex-1 bg-[#1e1e2e] border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500 transition-colors"
@@ -701,7 +642,7 @@ function Chat({ account }: { account: Account }) {
               placeholder="Type a message..."
             />
             <button
-              className="bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold px-3 py-2 rounded-lg transition-colors"
+              className="bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white text-sm font-semibold px-3 py-2 rounded-lg transition-colors touch-manipulation"
               onClick={sendMessage}
             >
               Send
@@ -714,6 +655,43 @@ function Chat({ account }: { account: Account }) {
 }
 
 // ─── App Root ─────────────────────────────────────────────
+// export default function App() {
+//   const [account, setAccount] = useState<Account | null>(() => {
+//     const saved = localStorage.getItem("account");
+//     return saved ? JSON.parse(saved) : null;
+//   });
+
+//   const handleLogout = () => {
+//     localStorage.removeItem("account");
+//     setAccount(null);
+//     socket.disconnect();
+//     socket.connect();
+//   };
+
+//   if (!account) return <AuthScreen onLogin={setAccount} />;
+
+//   return (
+//     <div className="fixed inset-0">
+//       {/* Logout button — top right, safe on all screens */}
+//       <button
+//         onClick={handleLogout}
+//         className="fixed top-2 right-2 sm:right-14 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all touch-manipulation"
+//       >
+//         Logout
+//       </button>
+
+//       <Tldraw>
+//         <SyncLayer account={account} />
+//       </Tldraw>
+
+//       {/* On mobile: only one panel visible at a time via z-index stacking.
+//           Dashboard sits on left half, Chat on right half — both collapsed by default. */}
+//       <Dashboard account={account} />
+//       <Chat account={account} />
+//     </div>
+//   );
+// }
+
 export default function App() {
   const [account, setAccount] = useState<Account | null>(() => {
     const saved = localStorage.getItem("account");
@@ -730,10 +708,11 @@ export default function App() {
   if (!account) return <AuthScreen onLogin={setAccount} />;
 
   return (
-    <div className="fixed inset-0">
+    // key={account.id} makes sure tldraw never remounts on re-render
+    <div key={account.id} className="fixed inset-0">
       <button
         onClick={handleLogout}
-        className="fixed top-2 right-50 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all"
+        className="fixed top-2 right-80 z-[99999] bg-[#2a2a3e] hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all"
       >
         Logout
       </button>
