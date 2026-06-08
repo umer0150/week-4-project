@@ -156,14 +156,14 @@ app.post("/api/auth/login", async (req, res) => {
         .where(ilike(accounts.username, identifier.replace("@", "")));
 
   if (found.length === 0) {
-    res.status(401).json({ error: "Account not found" });
+    res.status(401).json({ error: "Invaild Credentials" });
     return;
   }
 
   const account = found[0]!;
   const isValid = await bcrypt.compare(password, account.password);
   if (!isValid) {
-    res.status(401).json({ error: "Incorrect password" });
+    res.status(401).json({ error: "Invaild Credentials" });
     return;
   }
 
